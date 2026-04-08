@@ -1,12 +1,15 @@
 # start application
 
 from fastapi import FastAPI
+from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.config.database import close_db, connect_db
 
 # FastAPI 인스턴스 생성
 app = FastAPI(
     title="MOIS Dashboard API",
-    description="행안부 통계 데이터 시각화 API",
+    description="행정안전부 통계연보 시각화 API",
     version="1.0.0"
 )
 
@@ -22,20 +25,15 @@ app.add_middleware(
 # 라우터 등록
 
 
-# 앱 시작 시 DB 연결
-@app.on_event("startup")
-async def startup():
-    from app.config.database import connect_db
+# DB 연결
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
     await connect_db()
-    print("Connected to DB")
-
-
-# 앱 종료 시 DB 연결 해제
-@app.on_event("shutdown")
-async def shutdown():
-    from app.config.database import close_db
+    yield
+    # shutdown
     await close_db()
-    print("Disconnected from DB")
+
 
 # 헬스체크
 @app.get("/health")
