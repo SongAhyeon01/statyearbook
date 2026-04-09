@@ -2,34 +2,44 @@
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config.settings import settings
-from app.config.exceptions import *
+from app.config.exceptions import DatabaseException
+from app.config.logging import get_logger
 
-client: AsyncIOMotorClient = None
-db = None
+# 로거
+logger = get_logger("database")
 
-async def connect_db():
-    global client, db
-    try:
-        client = AsyncIOMotorClient(
-            settings.mongo_url,
-            maxPoolSize=10,
-            minPoolSize=1,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
-        )
-        db = client[settings.MONGO_DB_NAME]
+class Database:
 
-        await client.admin.command("ping")
-        print(f"MongoDB 연결 성공: {settings.MONGO_DB_NAME}")
+    def __init__(self):
+        self.client: AsyncIOMotorClient = None
+        self.db = None
+        
 
-    except Exception as e:
-        raise DatabaseException(f"MongoDB 연결 실패: {e}")
+    # MongoDB 연결
+    async def connect(self):
+        try:
+            self.client = AsyncIOMotorClient(
+                settings.mongo_url,
+                maxPoolSize=10,
+                minPoolSize=1,
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=5000,
+            )
+            self.db = self.client[settings.MONGO_DB_NAME]
+            await self.client.admin.command("ping")
+            logger.info("MongoDB 연결 성공")
+        except Exception as e:
+            raise DatabaseException(f"MongoDB 연결 실패: {e}")
 
-async def close_db():
-    global client
-    if client:
-        client.close()
-        print("MongoDB 연결 종료")
+    # MongoDB 연결 종료
+    async def close(self):
+        if self.client:
+            self.client.close()
+            logger.info("MongoDB 연결 종료")
+
+
+database = Database()
+
 
 def get_database():
-    return db
+    return database.db

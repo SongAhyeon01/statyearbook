@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config.database import close_db, connect_db
+from app.config.database import database
+from app.config.logging import get_logger, setup_logger
 
 # FastAPI 인스턴스 생성
 app = FastAPI(
@@ -29,13 +30,19 @@ app.add_middleware(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup
-    await connect_db()
+    await database.connect()
     yield
     # shutdown
-    await close_db()
+    await database.close()
+    
+    
+# 로거
+setup_logger()
+logger = get_logger("main")
 
 
 # 헬스체크
 @app.get("/health")
 def health_check():
+    logger.info("Health check requested")
     return {"status": "ok"}
