@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config.database import database
 from app.config.logging import get_logger, setup_logger
 from app.router.load_api_router import router as load_api_router
+from app.router.stat_router import router as stat_router
 
 # DB 연결
 @asynccontextmanager
@@ -36,6 +37,7 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(load_api_router)
+app.include_router(stat_router)
     
     
 # 로거
